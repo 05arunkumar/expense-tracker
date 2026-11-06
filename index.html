@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<title>Daily Expense Tracker</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; font-family: "Segoe UI", Roboto, system-ui, sans-serif; background: #f1f5f4; color: #1f2937; padding-bottom: 40px; }
+  header { background: #0f766e; color: #fff; padding: 14px 16px 60px; }
+  header .top { display: flex; justify-content: space-between; align-items: center; }
+  header h1 { margin: 0; font-size: 18px; }
+  .monthnav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 10px; }
+  .monthnav button { background: rgba(255,255,255,.2); color: #fff; width: 40px; height: 40px; font-size: 20px; border-radius: 50%; padding: 0; }
+  .monthnav span { font-size: 18px; font-weight: 600; min-width: 160px; text-align: center; }
+  main { max-width: 560px; margin: -44px auto 0; padding: 0 12px; }
+  .card { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  .big { font-size: 34px; font-weight: 700; color: #0f766e; }
+  .lbl { font-size: 12px; color: #6b7280; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; text-align: center; }
+  .grid3 b { display: block; font-size: 16px; }
+  .bar { height: 10px; border-radius: 6px; background: #e5e7eb; overflow: hidden; margin-top: 10px; }
+  .bar > div { height: 100%; background: #0f766e; width: 0; }
+  .bar.over > div { background: #dc2626; }
+  form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  form .full { grid-column: 1 / -1; }
+  input, select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; }
+  #amount { font-size: 22px; font-weight: 600; }
+  button { border: 0; border-radius: 10px; background: #0f766e; color: #fff; font-size: 16px; padding: 13px; cursor: pointer; }
+  button.link { background: none; color: #fff; padding: 6px 10px; font-size: 13px; border: 1px solid rgba(255,255,255,.5); }
+  #msg { font-size: 13px; color: #059669; min-height: 18px; }
+  #msg.err { color: #b91c1c; }
+  .chart { display: flex; align-items: flex-end; gap: 2px; height: 110px; }
+  .chart .col { flex: 1; background: #99d5cf; border-radius: 3px 3px 0 0; min-height: 2px; position: relative; }
+  .chart .col.today { background: #0f766e; }
+  .axis { display: flex; justify-content: space-between; font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .cat { margin-bottom: 10px; }
+  .cat .row { display: flex; justify-content: space-between; font-size: 14px; }
+  .cat .bar { margin-top: 4px; height: 8px; }
+  .day { font-size: 12px; color: #6b7280; display: flex; justify-content: space-between; padding: 10px 0 4px; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+  .item .ic { width: 38px; height: 38px; border-radius: 50%; background: #e6f4f2; display: grid; place-items: center; font-size: 18px; flex: none; }
+  .item .mid { flex: 1; min-width: 0; }
+  .item .mid div:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .amt { font-weight: 600; }
+  .x { background: none; color: #9ca3af; font-size: 20px; padding: 4px 8px; }
+  .empty { text-align: center; color: #9ca3af; padding: 18px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>Daily Expense Tracker</h1>
+    <div style="display:flex;gap:6px">
+      <button class="link" id="budgetBtn">Budget</button>
+      <button class="link" id="currBtn">Currency</button>
+    </div>
+  </div>
+  <div class="monthnav">
+    <button id="prev">&lsaquo;</button><span id="monthName"></span><button id="next">&rsaquo;</button>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="lbl">Total spent this month</div>
+    <div class="big" id="total">0</div>
+    <div class="bar" id="budgetBar" style="display:none"><div></div></div>
+    <div class="lbl" id="budgetText"></div>
+    <div class="grid3">
+      <div><b id="today">0</b><span class="lbl">Today</span></div>
+      <div><b id="avg">0</b><span class="lbl">Daily average</span></div>
+      <div><b id="maxDay">0</b><span class="lbl">Highest day</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Add expense</h2>
+    <form id="form">
+      <input class="full" id="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Amount">
+      <select id="cat"></select>
+      <input id="date" type="date">
+      <input class="full" id="note" type="text" placeholder="Note (optional) e.g. lunch, bus ticket">
+      <button class="full" type="submit">Add expense</button>
+    </form>
+    <div id="msg"></div>
+  </section>
+
+  <section class="card">
+    <h2>Spending by day</h2>
+    <div class="chart" id="chart"></div>
+    <div class="axis"><span>1</span><span id="midDay"></span><span id="lastDay"></span></div>
+  </section>
+
+  <section class="card">
+    <h2>By category</h2>
+    <div id="cats"></div>
+  </section>
+
+  <section class="card">
+    <h2>All expenses this month</h2>
+    <div id="list"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var KEY = "expenseTracker.v1";
+  var CATS = { Food: "\uD83C\uDF54", Travel: "\uD83D\uDE8C", Shopping: "\uD83D\uDECD\uFE0F", Bills: "\uD83D\uDCA1",
+               Health: "\uD83D\uDC8A", Entertainment: "\uD83C\uDFAC", Groceries: "\uD83E\uDD66", Other: "\uD83D\uDCE6" };
+  var data;
+  try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!data || !data.items) data = { items: [], currency: "\u20B9", budget: 0 };
+  var view = new Date(); view.setDate(1);
+  var $ = function (id) { return document.getElementById(id); };
+
+  function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function money(n) { return data.currency + " " + n.toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+  function say(m, err) { $("msg").textContent = m; $("msg").className = err ? "err" : ""; }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(data)); return true; }
+    catch (e) { say("Could not save - storage is blocked in this browser.", true); return false; }
+  }
+
+  Object.keys(CATS).forEach(function (c) {
+    var o = document.createElement("option"); o.value = c; o.textContent = CATS[c] + " " + c; $("cat").appendChild(o);
+  });
+  $("date").value = iso(new Date());
+
+  $("form").onsubmit = function (e) {
+    e.preventDefault();
+    var amt = parseFloat($("amount").value);
+    if (!(amt > 0)) { say("Enter an amount greater than 0.", true); return; }
+    var date = $("date").value || iso(new Date());
+    data.items.push({ id: Date.now() + Math.random().toString(36).slice(2, 6), amount: amt, cat: $("cat").value,
+                      note: $("note").value.trim(), date: date });
+    $("amount").value = ""; $("note").value = "";
+    var p = date.split("-"); view = new Date(+p[0], +p[1] - 1, 1);
+    if (save()) say("Saved " + money(amt) + " on " + date + ".");
+    render();
+  };
+
+  $("prev").onclick = function () { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); render(); };
+  $("next").onclick = function () { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); render(); };
+  $("currBtn").onclick = function () {
+    var v = prompt("Currency symbol (e.g. \u20B9, $, \u20AC, \u00A3):", data.currency);
+    if (v && v.trim()) { data.currency = v.trim(); save(); render(); }
+  };
+  $("budgetBtn").onclick = function () {
+    var v = prompt("Monthly budget (0 to turn off):", data.budget || 0);
+    if (v !== null && !isNaN(parseFloat(v)) && parseFloat(v) >= 0) { data.budget = parseFloat(v); save(); render(); }
+  };
+
+  function render() {
+    var y = view.getFullYear(), m = view.getMonth();
+    var prefix = y + "-" + String(m + 1).padStart(2, "0");
+    var days = new Date(y, m + 1, 0).getDate();
+    var items = data.items.filter(function (i) { return i.date.indexOf(prefix) === 0; })
+                          .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : b.id > a.id ? 1 : -1; });
+    var total = 0, perDay = [], perCat = {};
+    for (var d = 0; d <= days; d++) perDay.push(0);
+    items.forEach(function (i) {
+      total += i.amount; perDay[+i.date.slice(8, 10)] += i.amount; perCat[i.cat] = (perCat[i.cat] || 0) + i.amount;
+    });
+
+    $("monthName").textContent = view.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    $("total").textContent = money(total);
+    var now = new Date(), isCur = now.getFullYear() === y && now.getMonth() === m;
+    var elapsed = isCur ? now.getDate() : days;
+    $("today").textContent = money(isCur ? perDay[now.getDate()] : 0);
+    $("avg").textContent = money(Math.round(total / elapsed * 100) / 100);
+    var mx = Math.max.apply(null, perDay);
+    $("maxDay").textContent = money(mx);
+
+    var bb = $("budgetBar");
+    if (data.budget > 0) {
+      var pct = total / data.budget * 100;
+      bb.style.display = ""; bb.className = "bar" + (pct > 100 ? " over" : "");
+      bb.firstChild.style.width = Math.min(pct, 100) + "%";
+      $("budgetText").textContent = total <= data.budget
+        ? money(data.budget - total) + " left of " + money(data.budget) + " budget"
+        : "Over budget by " + money(total - data.budget);
+    } else { bb.style.display = "none"; $("budgetText").textContent = "Tap Budget to set a monthly limit"; }
+
+    var chart = $("chart"); chart.innerHTML = "";
+    for (var k = 1; k <= days; k++) {
+      var c = document.createElement("div");
+      c.className = "col" + (isCur && k === now.getDate() ? " today" : "");
+      c.style.height = (mx ? perDay[k] / mx * 100 : 0) + "%";
+      c.title = k + ": " + money(perDay[k]);
+      chart.appendChild(c);
+    }
+    $("midDay").textContent = Math.ceil(days / 2); $("lastDay").textContent = days;
+
+    var cb = $("cats"); cb.innerHTML = "";
+    var names = Object.keys(perCat).sort(function (a, b) { return perCat[b] - perCat[a]; });
+    if (!names.length) cb.innerHTML = '<div class="empty">No expenses yet.</div>';
+    names.forEach(function (n) {
+      var div = document.createElement("div"); div.className = "cat";
+      var row = document.createElement("div"); row.className = "row";
+      var a = document.createElement("span"); a.textContent = (CATS[n] || "") + " " + n;
+      var b = document.createElement("span"); b.textContent = money(perCat[n]) + " (" + Math.round(perCat[n] / total * 100) + "%)";
+      row.appendChild(a); row.appendChild(b);
+      var bar = document.createElement("div"); bar.className = "bar";
+      var fill = document.createElement("div"); fill.style.width = (perCat[n] / total * 100) + "%"; bar.appendChild(fill);
+      div.appendChild(row); div.appendChild(bar); cb.appendChild(div);
+    });
+
+    var list = $("list"); list.innerHTML = "";
+    if (!items.length) list.innerHTML = '<div class="empty">Nothing recorded for this month.</div>';
+    var last = "";
+    items.forEach(function (i) {
+      if (i.date !== last) {
+        last = i.date;
+        var h = document.createElement("div"); h.className = "day";
+        var p = i.date.split("-");
+        var s1 = document.createElement("span");
+        s1.textContent = new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+        var s2 = document.createElement("span"); s2.textContent = money(perDay[+p[2]]);
+        h.appendChild(s1); h.appendChild(s2); list.appendChild(h);
+      }
+      var r = document.createElement("div"); r.className = "item";
+      var ic = document.createElement("div"); ic.className = "ic"; ic.textContent = CATS[i.cat] || "";
+      var mid = document.createElement("div"); mid.className = "mid";
+      var t1 = document.createElement("div"); t1.textContent = i.note || i.cat;
+      var t2 = document.createElement("div"); t2.className = "lbl"; t2.textContent = i.cat;
+      mid.appendChild(t1); mid.appendChild(t2);
+      var am = document.createElement("div"); am.className = "amt"; am.textContent = money(i.amount);
+      var x = document.createElement("button"); x.className = "x"; x.textContent = "\u00d7";
+      x.onclick = function () {
+        if (confirm("Delete this expense?")) { data.items = data.items.filter(function (z) { return z !== i; }); save(); render(); }
+      };
+      r.appendChild(ic); r.appendChild(mid); r.appendChild(am); r.appendChild(x); list.appendChild(r);
+    });
+  }
+
+  render();
+  if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js");
+})();
+</script>
+</body>
+</html>
